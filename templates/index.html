@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconocimiento Facial</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #video {
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        #capture {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #capture:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #333;
+            font-weight: bold;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        /* Estilos para el contenedor principal */
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 700px;
+        }
+
+        /* Botón de captura */
+        button:focus {
+            outline: none;
+        }
+
+        /* Estilos para el resultado */
+        #result {
+            font-size: 1.5rem;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Reconocimiento Facial</h1>
+        <video id="video" autoplay></video>
+        <button id="capture">Capturar y Reconocer</button>
+        <canvas id="canvas"></canvas>
+        <p id="result"></p>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const result = document.getElementById('result');
+        const captureButton = document.getElementById('capture');
+
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => video.srcObject = stream)
+            .catch(err => console.error('Error accediendo a la cámara:', err));
+
+        // Capturar imagen y enviarla al backend
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/jpeg');
+            fetch('http://127.0.0.1:5000/reconocer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData })
+            })
+                .then(response => response.json())
+                .then(data => result.textContent = `Nombre: ${data.nombre}`)
+                .catch(err => result.textContent = 'No encontrado');
+        });
+    </script>
+</body>
+</html>
